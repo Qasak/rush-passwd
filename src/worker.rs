@@ -7,7 +7,7 @@ use crossbeam_channel::Receiver;
 pub fn password_checker(index: usize, file_path: &Path, receive_password: Receiver<String>, ) -> JoinHandle<()> {
     let file = fs::File::open(file_path).expect("File should exist");
     thread::Builder::new()
-        .name("password-reader".to_string())
+        .name(format!("worker-{}", index))
         .spawn(move || {
             let mut archive = zip::ZipArchive::new(file).expect("zip should valid");
             loop {
