@@ -9,6 +9,7 @@ pub fn password_checker(index: usize, file_path: &Path, receive_password: Receiv
     thread::Builder::new()
         .name(format!("worker-{}", index))
         .spawn(move || {
+            println!("worker-{} start", index);
             let mut archive = zip::ZipArchive::new(file).expect("zip should valid");
             loop {
                 match receive_password.recv() {
