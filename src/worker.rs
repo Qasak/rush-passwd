@@ -5,13 +5,15 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
 use crossbeam_channel::{Receiver, Sender};
+use indicatif::ProgressBar;
 
 pub fn password_checker(
     index: usize,
     file_path: &Path,
     receive_password: Receiver<String>,
     stop_signal: Arc<AtomicBool>,
-    passwd_sender: Sender<String>
+    passwd_sender: Sender<String>,
+    progress_bar: ProgressBar,
 ) -> JoinHandle<()> {
     let file = fs::File::open(file_path).expect("File should exist");
     thread::Builder::new()
@@ -43,6 +45,7 @@ pub fn password_checker(
                         }
                     },
                 }
+                progress_bar.inc(1);
             }
         })
         .unwrap()

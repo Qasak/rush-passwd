@@ -9,3 +9,4 @@ edition = "2021"
 crossbeam-channel = '0.5.1'
 zip = '0.6.1'
 anyhow = "1.0.65"
+indicatif = "0.17.0"
