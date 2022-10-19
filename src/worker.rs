@@ -1,17 +1,25 @@
 use std::{fs, thread};
 use std::io::Read;
 use std::path::Path;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
-use crossbeam_channel::Receiver;
+use crossbeam_channel::{Receiver, Sender};
 
-pub fn password_checker(index: usize, file_path: &Path, receive_password: Receiver<String>, ) -> JoinHandle<()> {
+pub fn password_checker(
+    index: usize,
+    file_path: &Path,
+    receive_password: Receiver<String>,
+    stop_signal: Arc<AtomicBool>,
+    passwd_sender: Sender<String>
+) -> JoinHandle<()> {
     let file = fs::File::open(file_path).expect("File should exist");
     thread::Builder::new()
         .name(format!("worker-{}", index))
         .spawn(move || {
             println!("worker-{} start", index);
             let mut archive = zip::ZipArchive::new(file).expect("zip should valid");
-            loop {
+            while !stop_signal.load(Ordering::Relaxed) {
                 match receive_password.recv() {
                     Err(_) => break,
                     Ok(passwd) => {
@@ -24,8 +32,9 @@ pub fn password_checker(index: usize, file_path: &Path, receive_password: Receiv
                                 let mut buffer = Vec::with_capacity(zip.size() as usize);
                                 match zip.read_to_end(&mut buffer) {
                                     Ok(_) => {
-                                        println!("Password found:{}", passwd);
-                                        break;
+                                        passwd_sender
+                                            .send(passwd)
+                                            .expect("Send found passwd shouldn't fail");
                                     },
                                     // password collision - continue
                                     Err(_) => ()
