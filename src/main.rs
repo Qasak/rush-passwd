@@ -1,9 +1,11 @@
+use std::cmp::max;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread::available_parallelism;
 use crossbeam_channel::{Receiver, Sender};
 use indicatif;
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
@@ -14,9 +16,18 @@ mod worker;
 
 
 fn main() {
-    let zip_path = env::args().nth(1).unwrap();
+    let mut args_iter = env::args().skip(1);
+    let zip_path = args_iter.next().unwrap();
     let dict_path = "/opt/dict/passwd_10m.txt";
-    let workers = 8;
+    let num_cores = available_parallelism().unwrap().get();
+    let workers: usize = match args_iter.next() {
+        Some(count) => count.parse().unwrap(),
+        None => {
+            let num_cores = available_parallelism().unwrap().get();
+            max(1, num_cores - 1)
+        }
+    };
+    let workers = max(1,  num_cores - 1);
 
     match passwd_finder(&zip_path, dict_path, workers) {
         Some(f) => println!("passwd found:{}", f),
