@@ -14,7 +14,7 @@ mod reader;
 mod worker;
 
 
-
+// todo: rayon
 fn main() {
     let mut args_iter = env::args().skip(1);
     let zip_path = args_iter.next().unwrap();
